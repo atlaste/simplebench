@@ -205,8 +205,8 @@ int main() {
 	for (int i = 0; i < 20; ++i)
 	{
 		MTTest mt;
-		size *= 2;
 		total += mt.TestSimpleMT(size);
+		size *= 2;
 	}
 
 	size = 1;
@@ -214,8 +214,8 @@ int main() {
 	for (int i = 0; i < 20; ++i)
 	{
 		MTTest mt;
-		size *= 2;
 		total += mt.TestSimpleMT(size);
+		size *= 2;
 	}
 
 	// Bind the application to a single CPU
@@ -226,16 +226,16 @@ int main() {
 	std::cout << "Normal benchmark:" << std::endl;
 	for (int i = 0; i < 20; ++i)
 	{
-		size *= 2;
 		total += TestAVX2(size);
+		size *= 2;
 	}
 
 	size = 1;
 	std::cout << "AVX2 benchmark:" << std::endl;
 	for (int i = 0; i < 20; ++i)
 	{
-		size *= 2;
 		total += TestAVX2(size);
+		size *= 2;
 	}
 
 	std::cout << "Stub to ensure we calculate anything: " << total << std::endl;
