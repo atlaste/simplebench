@@ -28,7 +28,6 @@
 
 int TestAVX2(long long int size)
 {
-	SetThreadAffinityMask(GetCurrentThread(), 1);
 	long long int bytes = 1024ll * 1024ll * 4096ll;
 	long long int count = bytes / (size * 1024ll);
 
@@ -156,8 +155,6 @@ struct MTTest
 
 	int TestSimpleMT(long long int size)
 	{
-		SetThreadAffinityMask(GetCurrentThread(), -1);
-
 		const int numberThreads = 32;
 
 		this->size = size;
@@ -193,8 +190,6 @@ struct MTTest
 
 	int TestAVX2MT(long long int size)
 	{
-		SetThreadAffinityMask(GetCurrentThread(), -1);
-
 		const int numberThreads = 32;
 
 		this->size = size;
@@ -234,6 +229,11 @@ int main() {
 	int total = 0;
 	long long int size;
 
+#if defined(_MSC_VER)
+	// Bind the application to all CPU's.
+	SetThreadAffinityMask(GetCurrentThread(), -1);
+#endif
+
 	// Multi-threaded test
 
 	size = 1;
@@ -253,8 +253,11 @@ int main() {
 		total += mt.TestAVX2MT(size);
 		size *= 2;
 	}
+
+#if defined(_MSC_VER)
 	// Bind the application to a single CPU
 	SetThreadAffinityMask(GetCurrentThread(), 4);
+#endif
 
 	size = 1;
 	std::cout << "Normal benchmark:" << std::endl;
