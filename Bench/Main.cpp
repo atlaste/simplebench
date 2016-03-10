@@ -24,6 +24,12 @@
 
 	You might also wonder why the 'single threaded' code will process all the data while the AVX2 code does not? Well, 
 	since it's all about the loads, this is actually not the case. In both cases we'll load all the data.
+
+	So what about the cache benchmark? Well, cache is loaded from the memory to the L3 cache, all the way to the L1 cache 
+	(before	the processor actually uses it). This means that if we hit a single byte in a L1 cache page, we will trigger 
+	a cache load. Using this idea, we can perform the benchmark. This seems to be the way that professional software 
+	does cache benchmarks... however, since cache lines are only 64 bytes, we have to iterate over the different bytes to 
+	be sure -- and even then I think this method is arguably incorrect for a lot of reasons. 
 */
 
 int TestAVX2(long long int size)
@@ -82,7 +88,45 @@ int TestSimple(long long int size)
 			int dummy2 = 0;
 			while (data != end)
 			{
-				dummy2 = (*data++);
+				dummy2 = *data++;
+			}
+			dummy ^= dummy2;
+		}
+	}
+
+	_aligned_free(mem);
+
+	return (int)(dummy);
+}
+
+int TestCacheSpeed(long long int size)
+{
+	long long int bytes = 1024ll * 1024ll * 4096ll;
+	long long int count = bytes / (size * 1024ll);
+
+	std::ostringstream oss;
+	oss << "Size: " << size << "KB; speed:";
+
+	void* mem = _aligned_malloc((size * 1024 + 4096), 1024 * 256);
+	int limit = (size * 1024) / 32;
+
+	int dummy = 0;
+	{
+		Util::Timer timer(oss.str().c_str(), bytes);
+		for (int i = 0; i < count; ++i)
+		{
+			// Normal load & and:
+			const int* data = (const int*)mem;
+			const int* end = (const int*)(((byte*)mem) + size * 1024);
+
+			data += (i % 1024);
+			end += (i % 1024);
+
+			int dummy2 = 0;
+			while (data != end)
+			{
+				dummy2 = *data;
+				data += 128; // A single cache line is 4K. 
 			}
 			dummy ^= dummy2;
 		}
@@ -233,6 +277,14 @@ int main() {
 	// Bind the application to all CPU's.
 	SetThreadAffinityMask(GetCurrentThread(), -1);
 #endif
+
+	size = 4;
+	std::cout << "Cache benchmark (NOTE: this is arguably incorrect; see code comments):" << std::endl;
+	for (int i = 0; i < 20; ++i)
+	{
+		total += TestCacheSpeed(size);
+		size *= 2;
+	}
 
 	// Multi-threaded test
 
